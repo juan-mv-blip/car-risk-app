@@ -34,14 +34,20 @@ consumidor_habitual = st.checkbox("¿Es consumidor habitual?", value=True)
 input_dict = {col: 0 for col in variables}
 input_dict["Edad"] = edad
 
-# Agregar dummies correctos
-vj_col = [v for v in videojuegos_dummies if videojuego.replace(" ", "_") in v]
-plataforma_col = [v for v in plataformas_dummies if plataforma.replace(" ", "_") in v]
+# Convertir selección del usuario a formato dummy (reemplaza espacios por guiones bajos)
+vj_dummy = f"videojuego_{videojuego.replace(' ', '_')}"
+plataforma_dummy = f"Plataforma_{plataforma.replace(' ', '_')}"
 
-if vj_col:
-    input_dict[vj_col[0]] = 1
-if plataforma_col:
-    input_dict[plataforma_col[0]] = 1
+# Agregar al diccionario si existen en el modelo
+if vj_dummy in variables:
+    input_dict[vj_dummy] = 1
+else:
+    st.warning(f"⚠️ La variable {vj_dummy} no existe en el modelo.")
+
+if plataforma_dummy in variables:
+    input_dict[plataforma_dummy] = 1
+else:
+    st.warning(f"⚠️ La variable {plataforma_dummy} no existe en el modelo.")
 
 # Sexo y consumidor habitual
 if "Sexo_Mujer" in variables:
