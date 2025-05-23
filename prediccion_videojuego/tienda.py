@@ -15,7 +15,7 @@ videojuego_map = {v.replace("videojuego_", "").replace("_", " "): v for v in vid
 plataforma_map = {v.replace("Plataforma_", "").replace("_", " "): v for v in plataformas_dummies}
 
 st.image(
-    https://raw.githubusercontent.com/juan-mv-blip/car-risk-app/refs/heads/main/prediccion_videojuego/assets/tienda.jpg,
+    "https://raw.githubusercontent.com/juan-mv-blip/car-risk-app/refs/heads/main/prediccion_videojuego/assets/tienda.jpg",
     caption="Predicción de presupuesto en tienda de videojuegos",
     use_column_width=True
 )
