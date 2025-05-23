@@ -42,7 +42,9 @@ st.title("🎮 Predicción de gasto promedio en videojuegos")
 edad = st.slider("Edad del jugador", min_value=10, max_value=70, value=25)
 sexo = st.selectbox("Sexo", ["Hombre", "Mujer"])
 consumidor = st.selectbox("¿Es consumidor habitual?", ["Sí", "No"]) == "Sí"
-videojuego = st.selectbox("Videojuego favorito", ["Fifa", "GTA", "Minecraft", "Call of Duty", "Fortnite"])
+videojuego = st.selectbox("Videojuego favorito", [
+    'Mass Effect', 'Sim City', 'Dead Space', 'Battlefield', 'Fifa', 'F1', 'KOA: Reckoning'
+])
 plataforma = st.selectbox("Plataforma preferida", ["PC", "PlayStation", "Xbox", "Switch", "Móvil"])
 
 # Generar entrada del usuario
