@@ -2,16 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
-import re
-
-# Función para normalizar nombres a formato dummy variable
-def normalize_dummy_name(name):
-    # Elimina comillas simples, reemplaza espacios, dos puntos y caracteres especiales por _
-    name = name.replace("'", "")
-    name = re.sub(r'[^a-zA-Z0-9]', '_', name)
-    name = re.sub(r'__+', '_', name)  # Reemplaza dobles guiones bajos por uno solo
-    name = name.strip('_')
-    return name
 
 # Cargar modelos entrenados y variables
 with open("modelo-reg-tree-knn-nn.pkl", "rb") as f:
@@ -28,45 +18,36 @@ st.header("📋 Ingresa los datos del consumidor")
 
 edad = st.slider("Edad", min_value=14, max_value=52, value=25)
 
-# Detectar categorías desde variables del modelo
+# Detectar automáticamente las categorías desde las variables del modelo
 videojuegos_dummies = [v for v in variables if v.startswith("videojuego_")]
 plataformas_dummies = [v for v in variables if v.startswith("Plataforma_")]
 
-# Extraer nombres para mostrar en selectbox (normalizando)
-videojuegos = []
-for v in videojuegos_dummies:
-    base = v.replace("videojuego_", "")
-    base_norm = base.replace("_", " ")
-    videojuegos.append(base_norm)
-
-plataformas = []
-for p in plataformas_dummies:
-    base = p.replace("Plataforma_", "")
-    base_norm = base.replace("_", " ")
-    plataformas.append(base_norm)
+videojuegos = [v.replace("videojuego_", "").replace("_", " ") for v in videojuegos_dummies]
+plataformas = [v.replace("Plataforma_", "").replace("_", " ") for v in plataformas_dummies]
 
 videojuego = st.selectbox("¿Qué videojuego le interesa?", videojuegos)
 plataforma = st.selectbox("Plataforma preferida", plataformas)
 sexo = st.selectbox("Sexo", ['Hombre', 'Mujer'])
 consumidor_habitual = st.checkbox("¿Es consumidor habitual?", value=True)
 
-# Crear diccionario de input inicializado en 0
+# Crear el input del modelo
 input_dict = {col: 0 for col in variables}
 input_dict["Edad"] = edad
 
-# Normalizar las opciones seleccionadas para que coincidan con nombres dummy
-vj_dummy_name = "videojuego_" + normalize_dummy_name(videojuego)
-plataforma_dummy_name = "Plataforma_" + normalize_dummy_name(plataforma)
+# Convertir selección del usuario a formato dummy (reemplaza espacios por guiones bajos)
+vj_dummy = f"videojuego_{videojuego.replace(' ', '_')}"
+plataforma_dummy = f"Plataforma_{plataforma.replace(' ', '_')}"
 
-if vj_dummy_name in variables:
-    input_dict[vj_dummy_name] = 1
+# Agregar al diccionario si existen en el modelo
+if vj_dummy in variables:
+    input_dict[vj_dummy] = 1
 else:
-    st.warning(f"⚠️ Variable {vj_dummy_name} no encontrada en el modelo.")
+    st.warning(f"⚠️ La variable {vj_dummy} no existe en el modelo.")
 
-if plataforma_dummy_name in variables:
-    input_dict[plataforma_dummy_name] = 1
+if plataforma_dummy in variables:
+    input_dict[plataforma_dummy] = 1
 else:
-    st.warning(f"⚠️ Variable {plataforma_dummy_name} no encontrada en el modelo.")
+    st.warning(f"⚠️ La variable {plataforma_dummy} no existe en el modelo.")
 
 # Sexo y consumidor habitual
 if "Sexo_Mujer" in variables:
@@ -77,7 +58,7 @@ if "Consumidor_habitual_True" in variables:
 # Convertir a DataFrame
 input_df = pd.DataFrame([input_dict])
 
-# Normalizar Edad para KNN y Red Neuronal
+# Normalizar Edad
 if modelo_nombre in ["KNN", "Red Neuronal"]:
     input_df[["Edad"]] = min_max_scaler.transform(input_df[["Edad"]])
 
@@ -89,5 +70,6 @@ st.dataframe(input_df)
 if st.button("📊 Predecir presupuesto"):
     pred = modelo.predict(input_df)[0]
     st.success(f"💰 Presupuesto estimado: ${pred:,.2f}")
+
 
 
