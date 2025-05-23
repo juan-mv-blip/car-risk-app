@@ -1,87 +1,78 @@
 import streamlit as st
 import pandas as pd
-import pickle
 import numpy as np
+import pickle
 
-# Configuración general de la página
-st.set_page_config(page_title="Predicción compra de videojuegos en tienda", page_icon="🕹️", layout="centered")
+# Cargar modelo y columnas utilizadas en el entrenamiento
+filename = 'modelo-reg-tree-knn-nn.pkl'
+model_tree, model_knn, model_nn, variables, min_max_scaler = pickle.load(open(filename, 'rb'))
 
-# Imagen decorativa
-st.image("https://raw.githubusercontent.com/juan-mv-blip/car-risk-app/blob/main/prediccion_videojuego/assets/tienda.jpg", use_container_width=True)
-
-# Título y descripción
-st.markdown("""
-    <h1 style='text-align: center; color: #4CAF50;'>🛒 Predicción de Compra de Videojuegos</h1>
-    <p style='text-align: center; font-size: 16px;'>Estima cuánto presupuesto invertiría un usuario en videojuegos según sus características.</p>
-""", unsafe_allow_html=True)
-
-# Cargar modelos y recursos
-@st.cache_resource
-def cargar_modelos():
-    with open("modelo-reg-tree-knn-nn.pkl", "rb") as f:
-        modelo_tree, modelo_knn, modelo_nn, columnas_modelo, scaler = pickle.load(f)
-    return modelo_tree, modelo_knn, modelo_nn, columnas_modelo, scaler
-
-modelo_tree, modelo_knn, modelo_nn, columnas_modelo, scaler = cargar_modelos()
-
-# Entradas del usuario
-st.subheader("🎮 Parámetros del usuario")
-
-edad = st.slider("Edad", 14, 52, 25)
-
-videojuego = st.selectbox("Tipo de videojuego", [
-    'Mass Effect', 'Sim City', 'Dead Space', 'Battlefield', 'Fifa', 'F1', 'KOA: Reckoning'
-])
-
-plataforma = st.selectbox("Plataforma", [
-    'Play Station', 'PC', 'Xbox', 'Otros'
-])
-
-sexo = st.selectbox("Sexo", ["Hombre", "Mujer"])
-
-consumidor = st.checkbox("¿Es consumidor habitual?")
-
-# Preparar entrada para predicción
-def preparar_entrada(edad, sexo, consumidor, videojuego, plataforma):
-    datos = pd.DataFrame([{
-        "Edad": edad,
-        "Sexo": sexo,
-        "Consumidor_habitual": "Sí" if consumidor else "No",
-        "videojuego": videojuego,
-        "Plataforma": plataforma
+# Función para generar el input del usuario
+def generar_input(edad, sexo, consumidor_habitual, videojuego, plataforma):
+    # Crear DataFrame base
+    data = pd.DataFrame([{
+        'Edad': edad,
+        'Sexo': sexo,
+        'Consumidor_habitual': consumidor_habitual,
+        'videojuego': videojuego,
+        'Plataforma': plataforma
     }])
 
-    # Codificación one-hot sin drop_first
-    datos = pd.get_dummies(datos)
-
-    # Añadir columnas faltantes
-    for col in columnas_modelo:
-        if col not in datos.columns:
-            datos[col] = 0
-
-    # Ordenar columnas
-    datos = datos[columnas_modelo]
+    # Aplicar get_dummies igual que en entrenamiento
+    data = pd.get_dummies(data, columns=['videojuego', 'Plataforma'], drop_first=False)
+    data = pd.get_dummies(data, columns=['Sexo', 'Consumidor_habitual'], drop_first=True)
 
     # Escalar edad
-    datos[["Edad"]] = scaler.transform(datos[["Edad"]])
+    data[['Edad']] = min_max_scaler.transform(data[['Edad']])
 
-    return datos
+    # Asegurar que todas las columnas necesarias están presentes
+    for col in variables:
+        if col not in data.columns:
+            data[col] = 0
 
-X_input = preparar_entrada(edad, sexo, consumidor, videojuego, plataforma)
+    # Asegurar el orden de columnas
+    data = data[variables]
 
-# Selección de modelo
-modelo_sel = st.selectbox("🧠 Selecciona el modelo", ["Árbol de Decisión", "KNN", "Red Neuronal"])
+    return data
 
-# Predicción
-if st.button("🔍 Predecir presupuesto"):
-    if modelo_sel == "Árbol de Decisión":
-        pred = modelo_tree.predict(X_input)[0]
-    elif modelo_sel == "KNN":
-        pred = modelo_knn.predict(X_input)[0]
-    else:
-        pred = modelo_nn.predict(X_input)[0]
+# Título
+st.title("🎮 Predicción de gasto promedio en videojuegos")
 
-    st.success(f"💰 Presupuesto estimado: **${pred:,.2f}**")
+# Entradas del usuario
+edad = st.slider("Edad del jugador", min_value=10, max_value=70, value=25)
+sexo = st.selectbox("Sexo", ["Hombre", "Mujer"])
+consumidor = st.selectbox("¿Es consumidor habitual?", ["Sí", "No"]) == "Sí"
+videojuego = st.selectbox("Videojuego favorito", ["Fifa", "GTA", "Minecraft", "Call of Duty", "Fortnite"])
+plataforma = st.selectbox("Plataforma preferida", ["PC", "PlayStation", "Xbox", "Switch", "Móvil"])
+
+# Generar entrada del usuario
+X_input = generar_input(edad, sexo, consumidor, videojuego, plataforma)
+
+# Mostrar input procesado para depuración
+st.subheader("🔍 Entrada al modelo")
+st.dataframe(X_input)
+
+# Realizar predicciones
+pred_tree = model_tree.predict(X_input)[0]
+pred_knn = model_knn.predict(X_input)[0]
+pred_nn = model_nn.predict(X_input)[0]
+
+# Mostrar resultados
+st.subheader("💡 Predicción del gasto promedio mensual")
+st.write(f"🌳 Árbol de decisión: **${pred_tree:.2f}**")
+st.write(f"🤖 K-Nearest Neighbors: **${pred_knn:.2f}**")
+st.write(f"🧠 Red neuronal: **${pred_nn:.2f}**")
+
+# Diagnóstico rápido
+if X_input.sum().sum() == 0:
+    st.warning("⚠️ Entrada completamente vacía. Verifica si las categorías coinciden con las del entrenamiento.")
+
+# Prueba de múltiples edades para diagnóstico
+st.subheader("🧪 Diagnóstico: efecto de la edad")
+for edad_test in [18, 25, 35, 45, 60]:
+    X_test = generar_input(edad_test, sexo, consumidor, videojuego, plataforma)
+    pred_test = model_tree.predict(X_test)[0]
+    st.write(f"Edad: {edad_test} → Árbol: ${pred_test:.2f}")
 
 
 
