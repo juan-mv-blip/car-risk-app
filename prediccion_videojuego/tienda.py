@@ -68,13 +68,19 @@ def generar_input(edad, sexo, consumidor, videojuego, plataforma):
     }
 
     df = pd.DataFrame([datos_usuario])
+
+    # Crear dummies exactamente como en entrenamiento
     df = pd.get_dummies(df, columns=['videojuego', 'Plataforma', 'Sexo', 'Consumidor_habitual'], drop_first=True)
 
+    # Asegurar que todas las variables esperadas por el modelo estén presentes
     for col in variables:
         if col not in df.columns:
             df[col] = 0
 
+    # Reordenar columnas
     df = df[variables]
+
+    # Normalizar edad
     df[['Edad']] = scaler.transform(df[['Edad']])
 
     return df
@@ -93,4 +99,5 @@ if st.button("Predecir"):
         resultado = modelo_nn.predict(X_input)[0]
 
     st.success(f"💰 Presupuesto estimado para invertir: ${resultado:,.2f}")
+
 
