@@ -3,7 +3,7 @@ import pandas as pd
 import pickle
 
 # Cargar modelos y datos de entrenamiento
-model_Tree, model_Knn, model_NN, variables, min_max_scaler = pickle.load(open('modelo_entrenado.pkl', 'rb'))
+model_Tree, model_Knn, model_NN, variables, min_max_scaler = pickle.load(open('modelo-reg-tree-knn-nn.pkl', 'rb'))
 
 # Título
 st.title('Predicción de Tiempo de Juego por Videojuego')
