@@ -2,69 +2,52 @@ import streamlit as st
 import pandas as pd
 import pickle
 
-# Cargar modelos entrenados y variables
-with open("modelo-reg-tree-knn-nn.pkl", "rb") as f:
-    _, _, model_NN, variables, min_max_scaler = pickle.load(f)
+# Cargar el modelo y variables
+filename = 'modelo-reg-tree-knn-nn.pkl'
+_, _, model_NN, variables, min_max_scaler = pickle.load(open(filename, 'rb'))
 
-# Título principal
-st.title("🎮 Predicción de Presupuesto para Videojuegos")
-
-# Sección de entrada de datos
-st.header("📋 Ingresa los datos del consumidor")
-
-edad = st.slider("Edad", min_value=14, max_value=52, value=25)
-
-# Detectar automáticamente las categorías desde las variables del modelo
+# Extraer columnas dummy desde `variables`
 videojuegos_dummies = [v for v in variables if v.startswith("videojuego_")]
 plataformas_dummies = [v for v in variables if v.startswith("Plataforma_")]
 
-videojuegos = [v.replace("videojuego_", "").replace("_", " ") for v in videojuegos_dummies]
-plataformas = [v.replace("Plataforma_", "").replace("_", " ") for v in plataformas_dummies]
+# Crear diccionarios: mostrar valor limpio pero guardar el nombre dummy exacto
+videojuego_map = {v.replace("videojuego_", "").replace("_", " "): v for v in videojuegos_dummies}
+plataforma_map = {v.replace("Plataforma_", "").replace("_", " "): v for v in plataformas_dummies}
 
-videojuego = st.selectbox("¿Qué videojuego le interesa?", videojuegos)
-plataforma = st.selectbox("Plataforma preferida", plataformas)
-sexo = st.selectbox("Sexo", ['Hombre', 'Mujer'])
-consumidor_habitual = st.checkbox("¿Es consumidor habitual?", value=True)
+# Título y formulario
+st.title("🎮 Predicción de Presupuesto para Videojuegos")
+st.header("📋 Ingresa los datos del consumidor")
 
-# Crear el input del modelo
-input_dict = {col: 0 for col in variables}
-input_dict["Edad"] = edad
+edad = st.slider("Edad", min_value=14, max_value=52, value=25)
+videojuego = st.selectbox("¿Qué videojuego le interesa?", list(videojuego_map.keys()))
+plataforma = st.selectbox("Plataforma preferida", list(plataforma_map.keys()))
+sexo = st.selectbox("Sexo", ["Hombre", "Mujer"])
+consumidor = st.checkbox("¿Es consumidor habitual?", value=True)
 
-# Convertir selección del usuario a formato dummy (reemplaza espacios por guiones bajos)
-vj_dummy = f"videojuego_{videojuego.replace(' ', '_')}"
-plataforma_dummy = f"Plataforma_{plataforma.replace(' ', '_')}"
+# Crear DataFrame base con todas las variables inicializadas en 0
+input_data = pd.DataFrame(columns=variables)
+input_data.loc[0] = 0
 
-# Agregar al diccionario si existen en el modelo
-if vj_dummy in variables:
-    input_dict[vj_dummy] = 1
-else:
-    st.warning(f"⚠️ La variable {vj_dummy} no existe en el modelo.")
+# Normalizar edad
+input_data["Edad"] = min_max_scaler.transform([[edad]])[0][0]
 
-if plataforma_dummy in variables:
-    input_dict[plataforma_dummy] = 1
-else:
-    st.warning(f"⚠️ La variable {plataforma_dummy} no existe en el modelo.")
+# Activar las dummies correspondientes
+input_data[videojuego_map[videojuego]] = 1
+input_data[plataforma_map[plataforma]] = 1
+if sexo == "Mujer":
+    input_data["Sexo_Mujer"] = 1
+if consumidor:
+    input_data["Consumidor_habitual_True"] = 1
 
-# Sexo y consumidor habitual
-if "Sexo_Mujer" in variables:
-    input_dict["Sexo_Mujer"] = 1 if sexo == "Mujer" else 0
-if "Consumidor_habitual_True" in variables:
-    input_dict["Consumidor_habitual_True"] = 1 if consumidor_habitual else 0
-
-# Convertir a DataFrame
-input_df = pd.DataFrame([input_dict])
-
-# Normalizar Edad
-input_df[["Edad"]] = min_max_scaler.transform(input_df[["Edad"]])
-
-# Mostrar los datos ingresados
+# Mostrar datos ingresados
 st.subheader("🔍 Datos que se ingresan al modelo")
-st.dataframe(input_df)
+st.dataframe(input_data)
 
-# Botón de predicción
+# Botón para predecir
 if st.button("📊 Predecir presupuesto"):
-    pred = model_NN.predict(input_df)[0]
+    pred = model_NN.predict(input_data)[0]
     st.success(f"💰 Presupuesto estimado: ${pred:,.2f}")
+
 
 
 
