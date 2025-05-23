@@ -14,6 +14,10 @@ plataformas_dummies = [v for v in variables if v.startswith("Plataforma_")]
 videojuego_map = {v.replace("videojuego_", "").replace("_", " "): v for v in videojuegos_dummies}
 plataforma_map = {v.replace("Plataforma_", "").replace("_", " "): v for v in plataformas_dummies}
 
+# Convertir a listas ordenadas sin comillas innecesarias
+videojuego_opciones = list(videojuego_map.keys())
+plataforma_opciones = list(plataforma_map.keys())
+
 # Título y formulario
 st.title("🎮 Predicción de Presupuesto para Videojuegos")
 st.header("📋 Ingresa los datos del consumidor")
