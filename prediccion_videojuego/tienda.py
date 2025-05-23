@@ -1,73 +1,41 @@
-import streamlit as st
-import pandas as pd
+# Cargamos librerías principales
 import numpy as np
+import pandas as pd
 import pickle
 
-# Cargar modelos entrenados y variables
-with open("modelo-reg-tree-knn-nn.pkl", "rb") as f:
-    model_Tree, model_Knn, model_NN, variables, min_max_scaler = pickle.load(f)
+# Cargamos el modelo
+filename = 'modelo-reg-tree-knn-nn.pkl'
+model_Tree, model_Knn, model_NN, variables, min_max_scaler = pickle.load(open(filename, 'rb'))
 
-# Selección de modelo
-st.title("🎮 Predicción de Presupuesto para Videojuegos")
+# Cargamos los datos futuros
+data = pd.read_csv("videojuegos-datosFuturos.csv", sep=",")
 
-modelo_nombre = st.selectbox("Selecciona el modelo a usar", ["Árbol de Decisión", "KNN", "Red Neuronal"])
-modelo = {"Árbol de Decisión": model_Tree, "KNN": model_Knn, "Red Neuronal": model_NN}[modelo_nombre]
+# Limpiamos comillas simples en variables categóricas
+data['videojuego'] = data['videojuego'].str.replace("'", "", regex=False)
+data['Plataforma'] = data['Plataforma'].str.replace("'", "", regex=False)
 
-# Entradas del usuario
-st.header("📋 Ingresa los datos del consumidor")
+# Preparamos los datos
+data_preparada = data.copy()
+data_preparada = pd.get_dummies(data_preparada, columns=['videojuego', 'Plataforma'], drop_first=False)
+data_preparada = pd.get_dummies(data_preparada, columns=['Sexo', 'Consumidor_habitual'], drop_first=True)
 
-edad = st.slider("Edad", min_value=14, max_value=52, value=25)
+# Agregamos columnas faltantes que espera el modelo
+data_preparada = data_preparada.reindex(columns=variables, fill_value=0)
 
-# Detectar automáticamente las categorías desde las variables del modelo
-videojuegos_dummies = [v for v in variables if v.startswith("videojuego_")]
-plataformas_dummies = [v for v in variables if v.startswith("Plataforma_")]
+# Normalizamos la Edad
+data_preparada[['Edad']] = min_max_scaler.transform(data_preparada[['Edad']])
 
-videojuegos = [v.replace("videojuego_", "").replace("_", " ") for v in videojuegos_dummies]
-plataformas = [v.replace("Plataforma_", "").replace("_", " ") for v in plataformas_dummies]
+# Realizamos predicciones
+Y_Tree = model_Tree.predict(data_preparada)
+Y_Knn = model_Knn.predict(data_preparada)
+Y_NN = model_NN.predict(data_preparada)
 
-videojuego = st.selectbox("¿Qué videojuego le interesa?", videojuegos)
-plataforma = st.selectbox("Plataforma preferida", plataformas)
-sexo = st.selectbox("Sexo", ['Hombre', 'Mujer'])
-consumidor_habitual = st.checkbox("¿Es consumidor habitual?", value=True)
+# Guardamos resultados en el dataframe original
+data['Prediccion_Tree'] = Y_Tree
+data['Prediccion_Knn'] = Y_Knn
+data['Prediccion_NN'] = Y_NN
 
-# Crear el input del modelo
-input_dict = {col: 0 for col in variables}
-input_dict["Edad"] = edad
+# Mostramos el resultado final
+print(data)
 
-# Convertir selección del usuario a formato dummy (reemplaza espacios por guiones bajos)
-vj_dummy = f"videojuego_{videojuego.replace(' ', '_')}"
-plataforma_dummy = f"Plataforma_{plataforma.replace(' ', '_')}"
-
-# Agregar al diccionario si existen en el modelo
-if vj_dummy in variables:
-    input_dict[vj_dummy] = 1
-else:
-    st.warning(f"⚠️ La variable {vj_dummy} no existe en el modelo.")
-
-if plataforma_dummy in variables:
-    input_dict[plataforma_dummy] = 1
-else:
-    st.warning(f"⚠️ La variable {plataforma_dummy} no existe en el modelo.")
-
-# Sexo y consumidor habitual
-if "Sexo_Mujer" in variables:
-    input_dict["Sexo_Mujer"] = 1 if sexo == "Mujer" else 0
-if "Consumidor_habitual_True" in variables:
-    input_dict["Consumidor_habitual_True"] = 1 if consumidor_habitual else 0
-
-# Convertir a DataFrame
-input_df = pd.DataFrame([input_dict])
-
-# Normalizar Edad
-if modelo_nombre in ["KNN", "Red Neuronal"]:
-    input_df[["Edad"]] = min_max_scaler.transform(input_df[["Edad"]])
-
-# Mostrar el input
-st.subheader("🔍 Datos que se ingresan al modelo")
-st.dataframe(input_df)
-
-# Botón de predicción
-if st.button("📊 Predecir presupuesto"):
-    pred = modelo.predict(input_df)[0]
-    st.success(f"💰 Presupuesto estimado: ${pred:,.2f}")
 
