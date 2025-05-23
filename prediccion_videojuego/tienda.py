@@ -1,19 +1,15 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import pickle
 
 # Cargar modelos entrenados y variables
 with open("modelo-reg-tree-knn-nn.pkl", "rb") as f:
-    model_Tree, model_Knn, model_NN, variables, min_max_scaler = pickle.load(f)
+    _, _, model_NN, variables, min_max_scaler = pickle.load(f)
 
-# Selección de modelo
+# Título principal
 st.title("🎮 Predicción de Presupuesto para Videojuegos")
 
-modelo_nombre = st.selectbox("Selecciona el modelo a usar", ["Árbol de Decisión", "KNN", "Red Neuronal"])
-modelo = {"Árbol de Decisión": model_Tree, "KNN": model_Knn, "Red Neuronal": model_NN}[modelo_nombre]
-
-# Entradas del usuario
+# Sección de entrada de datos
 st.header("📋 Ingresa los datos del consumidor")
 
 edad = st.slider("Edad", min_value=14, max_value=52, value=25)
@@ -59,17 +55,17 @@ if "Consumidor_habitual_True" in variables:
 input_df = pd.DataFrame([input_dict])
 
 # Normalizar Edad
-if modelo_nombre in ["KNN", "Red Neuronal"]:
-    input_df[["Edad"]] = min_max_scaler.transform(input_df[["Edad"]])
+input_df[["Edad"]] = min_max_scaler.transform(input_df[["Edad"]])
 
-# Mostrar el input
+# Mostrar los datos ingresados
 st.subheader("🔍 Datos que se ingresan al modelo")
 st.dataframe(input_df)
 
 # Botón de predicción
 if st.button("📊 Predecir presupuesto"):
-    pred = modelo.predict(input_df)[0]
+    pred = model_NN.predict(input_df)[0]
     st.success(f"💰 Presupuesto estimado: ${pred:,.2f}")
+
 
 
 
