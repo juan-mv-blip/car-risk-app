@@ -23,7 +23,7 @@ st.markdown(
 )
 
 # Imagen de fondo decorativa
-st.image("assets/fondo.jpg", use_container_width=True)
+st.image("https://raw.githubusercontent.com/juan-mv-blip/car-risk-app/blob/main/prediccion_videojuego/assets/tienda.jpg", use_container_width=True)
 
 st.title("🎮 Predicción de Presupuesto en Videojuegos")
 st.markdown("Selecciona características del consumidor y predice el presupuesto de inversión en videojuegos.")
