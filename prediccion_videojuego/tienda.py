@@ -14,6 +14,12 @@ plataformas_dummies = [v for v in variables if v.startswith("Plataforma_")]
 videojuego_map = {v.replace("videojuego_", "").replace("_", " "): v for v in videojuegos_dummies}
 plataforma_map = {v.replace("Plataforma_", "").replace("_", " "): v for v in plataformas_dummies}
 
+st.image(
+    https://raw.githubusercontent.com/juan-mv-blip/car-risk-app/refs/heads/main/prediccion_videojuego/assets/tienda.jpg,
+    caption="Predicción de presupuesto en tienda de videojuegos",
+    use_column_width=True
+)
+
 # Título y formulario
 st.title("🎮 Predicción de Presupuesto para Videojuegos")
 st.header("📋 Ingresa los datos del consumidor")
