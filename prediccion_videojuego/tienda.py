@@ -46,17 +46,30 @@ plataforma = st.selectbox("Plataforma", ['PC', 'PlayStation', 'Xbox', 'Nintendo'
 
 # Transformación a input vector
 def generar_input(edad, sexo, consumidor, videojuego, plataforma):
-    df = pd.DataFrame(np.zeros((1, len(variables))), columns=variables)
-    df['Edad'] = edad
-    if sexo == 'Masculino':
-        df['Sexo_Masculino'] = 1
-    if consumidor == 'Sí':
-        df['Consumidor_habitual_Sí'] = 1
-    if f'videojuego_{videojuego}' in df.columns:
-        df[f'videojuego_{videojuego}'] = 1
-    if f'Plataforma_{plataforma}' in df.columns:
-        df[f'Plataforma_{plataforma}'] = 1
+    # Crear diccionario con datos originales
+    datos_usuario = {
+        "Edad": edad,
+        "Sexo": sexo,
+        "Consumidor_habitual": consumidor,
+        "videojuego": videojuego,
+        "Plataforma": plataforma
+    }
+
+    # Convertir a DataFrame y aplicar dummies
+    df = pd.DataFrame([datos_usuario])
+    df = pd.get_dummies(df, columns=['videojuego', 'Plataforma', 'Sexo', 'Consumidor_habitual'], drop_first=True)
+
+    # Añadir columnas faltantes
+    for col in variables:
+        if col not in df.columns:
+            df[col] = 0
+
+    # Reordenar columnas
+    df = df[variables]
+
+    # Normalizar edad
     df[['Edad']] = scaler.transform(df[['Edad']])
+
     return df
 
 X_input = generar_input(edad, sexo, consumidor, videojuego, plataforma)
@@ -73,3 +86,4 @@ if st.button("Predecir"):
         resultado = modelo_nn.predict(X_input)[0]
 
     st.success(f"💰 Presupuesto estimado para invertir: ${resultado:,.2f}")
+
