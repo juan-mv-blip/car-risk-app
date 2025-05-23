@@ -31,7 +31,7 @@ st.markdown("Selecciona características del consumidor y predice el presupuesto
 # Cargar modelos
 @st.cache_resource
 def cargar_modelos():
-    with open("modelos/modelo-reg-tree-knn-nn.pkl", "rb") as f:
+    with open("https://github.com/juan-mv-blip/car-risk-app/blob/main/prediccion_videojuego/modelos/modelo-reg-tree-knn-nn.pkl", "rb") as f:
         modelo_tree, modelo_knn, modelo_nn, variables, scaler = pickle.load(f)
     return modelo_tree, modelo_knn, modelo_nn, variables, scaler
 
