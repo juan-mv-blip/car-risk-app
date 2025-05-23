@@ -6,7 +6,7 @@ import joblib
 st.set_page_config(page_title="Riesgo Vehicular", page_icon="🚗", layout="centered")
 
 # Imagen decorativa (reemplaza esta URL si tienes una imagen propia en GitHub)
-st.image("https://raw.githubusercontent.com/juan-mv-blip/car-risk-app/main/assets/auto.jpg", use_column_width=True)
+st.image("https://raw.githubusercontent.com/juan-mv-blip/car-risk-app/main/assets/auto.jpg", use_container_width=True)
 
 # Título estilizado
 st.markdown("""
